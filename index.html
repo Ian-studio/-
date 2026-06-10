@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>薪資紀錄本</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Microsoft JhengHei','Segoe UI',Arial,sans-serif;background:#f0f4ff;color:#1a1a2e;min-height:100vh;}
+.topbar{background:#2d3a8c;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.topbar h1{color:#fff;font-size:20px;font-weight:600;letter-spacing:1px;}
+.topbar .meta{color:#b8c4ff;font-size:14px;font-weight:500;}
+.tabs{display:flex;background:#1e2a6e;padding:0 24px;}
+.tab-btn{padding:13px 24px;color:#a0aec0;font-size:14px;font-weight:500;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;}
+.tab-btn.active{color:#fff;border-bottom-color:#f6c90e;}
+.tab-btn:hover:not(.active){color:#d0d9ff;}
+.content{max-width:1100px;margin:0 auto;padding:24px 16px;}
+.page{display:none;}
+.page.active{display:block;}
+.settings-bar{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(45,58,140,0.08);display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.settings-bar h2{font-size:14px;font-weight:600;color:#2d3a8c;}
+.settings-field{display:flex;align-items:center;gap:8px;}
+.settings-field label{font-size:13px;color:#666;}
+.settings-field input[type=number]{width:78px;padding:6px 10px;border:1.5px solid #c3caf7;border-radius:8px;font-size:15px;font-weight:600;color:#2d3a8c;text-align:center;}
+.settings-field input[type=number]:focus{outline:none;border-color:#2d3a8c;}
+.hint{font-size:12px;color:#aaa;}
+.worklog-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(45,58,140,0.08);margin-bottom:20px;}
+.table-title{background:#2d3a8c;color:#fff;text-align:center;padding:13px;font-size:16px;font-weight:600;}
+.ws-row{display:flex;}
+.ws-label-cell{background:#2d3a8c;color:#fff;padding:9px 14px;font-size:12px;font-weight:500;min-width:150px;display:flex;align-items:center;}
+.ws-emp-cell{flex:1;padding:8px 4px;text-align:center;font-size:13px;font-weight:600;border-left:1px solid rgba(255,255,255,0.15);color:#fff;background:#3a4ba0;}
+.ws-val-cell{flex:1;padding:8px 4px;text-align:center;font-size:13px;font-weight:600;border-left:1px solid #e0e6f8;color:#2d3a8c;background:#eef1fc;}
+.ws-pay-cell{color:#e53e3e;}
+.day-table{width:100%;border-collapse:collapse;}
+.day-table th{background:#3a4ba0;color:#fff;padding:9px 8px;font-size:12px;font-weight:500;text-align:center;}
+.day-table td{padding:7px 6px;text-align:center;font-size:13px;border-bottom:1px solid #e8ecf8;}
+.day-table tr:nth-child(even) td{background:#f5f7ff;}
+.day-table tr:nth-child(odd) td{background:#fff;}
+.date-cell{color:#27ae60;font-weight:500;white-space:nowrap;}
+.day-cell{color:#2d3a8c;font-weight:500;}
+.hours-input{width:58px;padding:5px 6px;border:1.5px solid #c3caf7;border-radius:6px;font-size:13px;text-align:center;background:#fff;color:#1a1a2e;}
+.hours-input:focus{outline:none;border-color:#2d3a8c;background:#f0f4ff;}
+.weekend td{background:#fff8f0 !important;}
+.weekend .day-cell,.weekend .date-cell{color:#e07b00;}
+.rate-row td{background:#e8ecf8 !important;font-size:12px;}
+.rate-input{width:58px;padding:4px 6px;border:1.5px solid #c3caf7;border-radius:6px;font-size:13px;text-align:center;font-weight:600;color:#2d3a8c;}
+.rate-input:focus{outline:none;border-color:#2d3a8c;}
+.btn-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:7px;transition:all 0.15s;}
+.btn-csv{background:#27ae60;color:#fff;}
+.btn-csv:hover{background:#1e8449;}
+.btn-pdf{background:#e53e3e;color:#fff;}
+.btn-pdf:hover{background:#c0392b;}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+.sum-card{background:#fff;border-radius:14px;padding:20px 18px;box-shadow:0 2px 10px rgba(45,58,140,0.09);text-align:center;}
+.sum-label{font-size:13px;color:#888;margin-bottom:6px;}
+.sum-val{font-size:26px;font-weight:700;color:#2d3a8c;}
+.sum-val.red{color:#e53e3e;}
+.emp-sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.emp-sum-card{background:#fff;border-radius:14px;padding:18px 16px;box-shadow:0 2px 10px rgba(45,58,140,0.09);}
+.emp-tag{display:inline-block;padding:3px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:10px;}
+.tag-a{background:#e8eaff;color:#3730a3;}
+.tag-b{background:#dcfce7;color:#166534;}
+.tag-c{background:#ffedd5;color:#9a3412;}
+.tag-d{background:#fce7f3;color:#9d174d;}
+.tag-e{background:#f0fdf4;color:#14532d;}
+.emp-pay{font-size:22px;font-weight:700;color:#2d3a8c;margin-bottom:4px;}
+.emp-detail{font-size:12px;color:#888;line-height:1.6;}
+.section-title{font-size:16px;font-weight:600;color:#2d3a8c;margin-bottom:14px;}
+
+/* ── Print / PDF styles ── */
+@media print {
+  body{background:#fff;font-family:'Microsoft JhengHei',Arial,sans-serif;}
+  .topbar,.tabs,.btn-row,.settings-bar,#page-summary{display:none!important;}
+  .page{display:block!important;}
+  .content{max-width:100%;padding:0;}
+  .worklog-card{box-shadow:none;border:1px solid #ccc;border-radius:0;}
+  .hours-input,.rate-input{border:none;background:transparent;width:auto;font-family:'Microsoft JhengHei',Arial,sans-serif;}
+  .ws-label-cell{min-width:120px;}
+  .ws-emp-cells{display:flex;flex:1;}
+  table{page-break-inside:auto;}
+  tr{page-break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>💰 薪資紀錄本</h1>
+  <span class="meta" id="topbar-meta"></span>
+</div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchPage('worklog',this)">📋 工時紀錄</button>
+  <button class="tab-btn" onclick="switchPage('summary',this)">📈 月薪總結</button>
+</div>
+
+<div class="content">
+
+<!-- PAGE: Worklog -->
+<div class="page active" id="page-worklog">
+  <div class="settings-bar">
+    <h2>⚙️ 基本設定</h2>
+    <div class="settings-field">
+      <label>年份</label>
+      <input type="number" id="year" min="2000" max="2099" value="2026" oninput="onSettingsChange()">
+      <span class="hint">例：2026</span>
+    </div>
+    <div class="settings-field">
+      <label>月份</label>
+      <input type="number" id="month" min="1" max="12" value="4" oninput="onSettingsChange()">
+      <span class="hint">1–12</span>
+    </div>
+    <div id="emp-name-fields" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-left:1.5px solid #c3caf7;padding-left:16px;margin-left:4px;">
+      <span style="font-size:13px;color:#666;font-weight:600;">員工姓名</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-csv" onclick="exportCSV()">⬇️ 匯出 CSV</button>
+    <button class="btn btn-pdf" onclick="exportPDF()">🖨️ 匯出 PDF</button>
+  </div>
+
+  <div class="worklog-card">
+    <div class="table-title" id="worklog-title"></div>
+    <div id="ws-summary"></div>
+    <div style="overflow-x:auto;">
+      <table class="day-table">
+        <thead><tr id="worklog-thead"></tr></thead>
+        <tbody id="worklog-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: Summary -->
+<div class="page" id="page-summary">
+  <div class="sum-grid" id="sum-cards"></div>
+  <div class="section-title">各員工明細</div>
+  <div class="emp-sum-grid" id="emp-sum-cards"></div>
+</div>
+
+</div><!-- /content -->
+
+<!-- Hidden print frame for PDF -->
+<iframe id="print-frame" style="display:none;"></iframe>
+
+<script>
+const DEFAULT_NAMES=['員工A','員工B','員工C','員工D','員工E'];
+const EMP_TAGS=['tag-a','tag-b','tag-c','tag-d','tag-e'];
+const DAYS=['週日','週一','週二','週三','週四','週五','週六'];
+function pad(n){return String(n).padStart(2,'0');}
+
+// Employee names stored separately — never reset by month changes
+let empNames=JSON.parse(localStorage.getItem('salary_emp_names')||'null')||[...DEFAULT_NAMES];
+function saveNames(){localStorage.setItem('salary_emp_names',JSON.stringify(empNames));}
+function setEmpName(i,val){
+  empNames[i]=(val.trim()||DEFAULT_NAMES[i]);
+  saveNames();renderAll();
+}
+function renderEmpNameFields(){
+  const el=document.getElementById('emp-name-fields');
+  el.innerHTML='<span style="font-size:13px;color:#666;font-weight:600;">員工姓名</span>';
+  empNames.forEach((name,i)=>{
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;align-items:center;gap:4px;';
+    wrap.innerHTML=`<span style="font-size:11px;color:#aaa;">${i+1}.</span><input type="text" value="${name}" maxlength="10" style="width:72px;padding:5px 7px;border:1.5px solid #c3caf7;border-radius:7px;font-size:13px;font-weight:600;color:#2d3a8c;text-align:center;" onblur="setEmpName(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
+    el.appendChild(wrap);
+  });
+}
+
+let state=JSON.parse(localStorage.getItem('salary_v3')||'null')||{year:2026,month:4,rates:[196,180,180,180,180],hours:{}};
+function save(){localStorage.setItem('salary_v3',JSON.stringify(state));}
+function getDays(y,m){return new Date(y,m,0).getDate();}
+function hKey(d,i){return `${state.year}-${pad(state.month)}-${pad(d)}-${i}`;}
+function getH(d,i){const v=state.hours[hKey(d,i)];return v!==undefined?v:'';}
+function setH(d,i,val){
+  const k=hKey(d,i);
+  if(val===''||val===null){delete state.hours[k];}else{state.hours[k]=parseFloat(val)||0;}
+  save();updateSummaryHeader();refreshSummary();
+}
+function totalH(i){
+  const days=getDays(state.year,state.month);let t=0;
+  for(let d=1;d<=days;d++){const v=state.hours[hKey(d,i)];if(v!==undefined)t+=v;}
+  return t;
+}
+function onSettingsChange(){
+  state.year=parseInt(document.getElementById('year').value)||2026;
+  state.month=parseInt(document.getElementById('month').value)||1;
+  if(state.month<1)state.month=1;if(state.month>12)state.month=12;
+  save();renderAll();
+}
+function renderAll(){
+  document.getElementById('topbar-meta').textContent=`${state.year}年${state.month}月`;
+  document.getElementById('year').value=state.year;
+  document.getElementById('month').value=state.month;
+  document.getElementById('worklog-title').textContent=`${state.year}年${state.month}月 薪資紀錄`;
+  renderEmpNameFields();
+  renderWorklogTable();updateSummaryHeader();refreshSummary();
+}
+function renderWorklogTable(){
+  const days=getDays(state.year,state.month);
+  document.getElementById('worklog-thead').innerHTML=
+    `<th style="width:36px">#</th><th style="width:100px">日期</th><th style="width:68px">星期</th>`+
+    empNames.map(n=>`<th>${n}<br><span style="font-size:10px;font-weight:400;opacity:0.8">工時(h)</span></th>`).join('');
+  const tbody=document.getElementById('worklog-tbody');
+  tbody.innerHTML='';
+  const rr=document.createElement('tr');
+  rr.className='rate-row';
+  rr.innerHTML=`<td colspan="3" style="text-align:right;padding-right:10px;font-weight:600;color:#2d3a8c;">時薪（元）</td>`+
+    empNames.map((_,i)=>`<td><input class="rate-input" type="number" min="0" value="${state.rates[i]}" onchange="setRate(${i},this.value)"></td>`).join('');
+  tbody.appendChild(rr);
+  for(let d=1;d<=days;d++){
+    const date=new Date(state.year,state.month-1,d);
+    const dow=date.getDay();const isW=dow===0||dow===6;
+    const tr=document.createElement('tr');if(isW)tr.className='weekend';
+    let cells=`<td>${d}</td><td class="date-cell">${state.year}/${pad(state.month)}/${pad(d)}</td><td class="day-cell">${DAYS[dow]}</td>`;
+    empNames.forEach((_,i)=>{
+      const v=getH(d,i);
+      cells+=`<td><input class="hours-input" type="number" min="0" step="0.5" value="${v}" placeholder="-" onchange="setH(${d},${i},this.value)"></td>`;
+    });
+    tr.innerHTML=cells;tbody.appendChild(tr);
+  }
+}
+function updateSummaryHeader(){
+  document.getElementById('ws-summary').innerHTML=`
+    <div class="ws-row">
+      <div class="ws-label-cell">員工姓名</div>
+      <div style="display:flex;flex:1;">${empNames.map(n=>`<div class="ws-emp-cell">${n}</div>`).join('')}</div>
+    </div>
+    <div class="ws-row">
+      <div class="ws-label-cell">總工時（小時）</div>
+      <div style="display:flex;flex:1;">${empNames.map((_,i)=>`<div class="ws-val-cell">${totalH(i).toFixed(2)}</div>`).join('')}</div>
+    </div>
+    <div class="ws-row">
+      <div class="ws-label-cell">本月薪資合計（元）</div>
+      <div style="display:flex;flex:1;">${empNames.map((_,i)=>`<div class="ws-val-cell ws-pay-cell">$${Math.round(totalH(i)*(state.rates[i]||0)).toLocaleString()}</div>`).join('')}</div>
+    </div>`;
+}
+function setRate(i,val){state.rates[i]=parseFloat(val)||0;save();updateSummaryHeader();refreshSummary();}
+function refreshSummary(){
+  let grandH=0,grandP=0;
+  empNames.forEach((_,i)=>{grandH+=totalH(i);grandP+=totalH(i)*(state.rates[i]||0);});
+  const avgRate=Math.round(state.rates.reduce((a,b)=>a+b,0)/empNames.length);
+  document.getElementById('sum-cards').innerHTML=`
+    <div class="sum-card"><div class="sum-label">${state.year}年${state.month}月 全員薪資</div><div class="sum-val red">$${Math.round(grandP).toLocaleString()}</div></div>
+    <div class="sum-card"><div class="sum-label">全員總工時</div><div class="sum-val">${grandH.toFixed(1)} h</div></div>
+    <div class="sum-card"><div class="sum-label">員工人數</div><div class="sum-val">${empNames.length}</div></div>
+    <div class="sum-card"><div class="sum-label">平均時薪</div><div class="sum-val">${avgRate} 元</div></div>`;
+  const eg=document.getElementById('emp-sum-cards');eg.innerHTML='';
+  empNames.forEach((name,i)=>{
+    const h=totalH(i),p=Math.round(h*(state.rates[i]||0));
+    const div=document.createElement('div');div.className='emp-sum-card';
+    div.innerHTML=`<div class="emp-tag ${EMP_TAGS[i]}">${name}</div><div class="emp-pay">$${p.toLocaleString()}</div><div class="emp-detail">工時：${h.toFixed(2)} h　時薪：${state.rates[i]} 元</div>`;
+    eg.appendChild(div);
+  });
+}
+function switchPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='summary')refreshSummary();
+}
+function exportCSV(){
+  const days=getDays(state.year,state.month);
+  const header=['日期','星期',...empNames.map(n=>n+'工時(h)'),...empNames.map(n=>n+'薪資(元)')].join(',');
+  const rows=[];
+  for(let d=1;d<=days;d++){
+    const dow=new Date(state.year,state.month-1,d).getDay();
+    const hrs=empNames.map((_,i)=>getH(d,i)||0);
+    const pays=hrs.map((h,i)=>Math.round(h*(state.rates[i]||0)));
+    rows.push([`${state.year}/${pad(state.month)}/${pad(d)}`,DAYS[dow],...hrs,...pays].join(','));
+  }
+  const totalRow=['合計','',...empNames.map((_,i)=>totalH(i).toFixed(2)),...empNames.map((_,i)=>Math.round(totalH(i)*(state.rates[i]||0)))].join(',');
+  const csv='\uFEFF'+[header,...rows,totalRow].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`薪資紀錄_${state.year}年${state.month}月.csv`;a.click();
+}
+
+function exportPDF(){
+  const days=getDays(state.year,state.month);
+  // Build a self-contained HTML page for printing
+  let rowsHTML='';
+  for(let d=1;d<=days;d++){
+    const date=new Date(state.year,state.month-1,d);
+    const dow=date.getDay();
+    const isW=dow===0||dow===6;
+    const bg=isW?'#fff8f0':(d%2===0?'#f5f7ff':'#fff');
+    const dateColor=isW?'#e07b00':'#27ae60';
+    const hrs=empNames.map((_,i)=>{const v=getH(d,i);return v===''?'-':v;});
+    rowsHTML+=`<tr style="background:${bg}">
+      <td style="text-align:center">${d}</td>
+      <td style="color:${dateColor};text-align:center">${state.year}/${pad(state.month)}/${pad(d)}</td>
+      <td style="color:${isW?'#e07b00':'#2d3a8c'};text-align:center">${DAYS[dow]}</td>
+      ${hrs.map(h=>`<td style="text-align:center">${h}</td>`).join('')}
+    </tr>`;
+  }
+  const sumRows=empNames.map((_,i)=>`<td style="text-align:center;font-weight:700">${totalH(i).toFixed(2)}</td>`).join('');
+  const payRows=empNames.map((_,i)=>`<td style="text-align:center;font-weight:700;color:#e53e3e">$${Math.round(totalH(i)*(state.rates[i]||0)).toLocaleString()}</td>`).join('');
+  const rateRows=empNames.map((_,i)=>`<td style="text-align:center;color:#2d3a8c;font-weight:600">${state.rates[i]}元</td>`).join('');
+
+  const html=`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">
+<title>${state.year}年${state.month}月 薪資紀錄</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Microsoft JhengHei','蘋方-繁','Noto Sans TC',Arial,sans-serif;font-size:12px;color:#1a1a2e;padding:16px;}
+  h2{text-align:center;color:#2d3a8c;font-size:16px;margin-bottom:14px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:12px;}
+  th{background:#3a4ba0;color:#fff;padding:7px 6px;text-align:center;font-size:11px;}
+  td{padding:6px;border-bottom:1px solid #e0e6f8;font-size:11px;}
+  .sum-table th:first-child{background:#2d3a8c;}
+  tr:last-child td{border-bottom:none;}
+  @media print{@page{size:A4 landscape;margin:10mm;}}
+</style>
+</head><body>
+<h2>${state.year}年${state.month}月 薪資紀錄</h2>
+<table class="sum-table">
+  <tr><th style="min-width:120px;text-align:left;padding-left:10px;background:#2d3a8c;">員工姓名</th>${empNames.map(n=>`<th>${n}</th>`).join('')}</tr>
+  <tr style="background:#eef1fc"><td style="font-weight:600;padding-left:10px;">時薪（元）</td>${rateRows}</tr>
+  <tr style="background:#eef1fc"><td style="font-weight:600;padding-left:10px;">總工時（小時）</td>${sumRows}</tr>
+  <tr style="background:#eef1fc"><td style="font-weight:600;padding-left:10px;">本月薪資合計（元）</td>${payRows}</tr>
+</table>
+<table>
+  <thead><tr>
+    <th style="width:28px">#</th>
+    <th style="width:90px">日期</th>
+    <th style="width:52px">星期</th>
+    ${empNames.map(n=>`<th>${n}<br>工時(h)</th>`).join('')}
+  </tr></thead>
+  <tbody>${rowsHTML}</tbody>
+</table>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  win.onload=()=>{win.focus();win.print();};
+}
+
+renderAll();
+</script>
+</body>
+</html>
